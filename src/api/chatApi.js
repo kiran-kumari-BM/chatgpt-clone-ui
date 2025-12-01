@@ -1,25 +1,30 @@
-// All backend / OpenAI integration goes here.
-// Right now it returns a mock answer so the UI works out of the box.
+// src/api/chatApi.js
+
+// URL of your FastAPI backend
+const API_BASE_URL = "http://localhost:8000";
 
 export async function sendMessageToBackend(prompt, files, conversationId) {
-  // Example for real backend:
-  //
-  // const formData = new FormData();
-  // formData.append("prompt", prompt);
-  // formData.append("conversationId", conversationId);
-  // files.forEach((file) => formData.append("files", file));
-  //
-  // const res = await fetch("https://your-backend.com/api/chat", {
-  //   method: "POST",
-  //   body: formData,
-  // });
-  // const data = await res.json();
-  // return data.answer;
+  const formData = new FormData();
+  formData.append("prompt", prompt || "");
+  if (conversationId) {
+    formData.append("conversationId", conversationId);
+  }
 
-  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-  await delay(600);
+  (files || []).forEach((file) => {
+    formData.append("files", file);
+  });
 
-  return `Mock answer for: "${prompt || "(no text, only files)"}"
+  const res = await fetch(`${API_BASE_URL}/api/chat`, {
+    method: "POST",
+    body: formData,
+  });
 
-(Implement your real backend in src/api/chatApi.js and return a string response here.)`;
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Backend error: ${res.status} - ${text}`);
+  }
+
+  const data = await res.json();
+  // FastAPI returns: { "answer": "..." }
+  return data.answer;
 }
